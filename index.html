@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Integrasi Aplikasi Perkantoran</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Toast Animation */
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast-enter { animation: slideUp 0.3s ease-out forwards; }
+        
+        /* Print Styles */
+        @media print {
+            body { background-color: white; color: black; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            #app-container { display: none; }
+            #print-section { display: block !important; width: 100%; margin: 0; padding: 0; }
+            .print-page { page-break-after: always; padding: 20px; }
+            .print-card { border: 1px solid #ddd; margin-bottom: 20px; padding: 15px; border-radius: 8px; page-break-inside: avoid; }
+            @page { size: A4 portrait; margin: 2cm; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased h-screen flex flex-col">
+
+    <!-- App Header (No Print) -->
+    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50 no-print">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="font-bold text-lg truncate">LKPD Informatika: Integrasi Konten</h1>
+            <button onclick="confirmReset()" class="text-sm bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded transition">
+                🔄 Reset
+            </button>
+        </div>
+        <!-- Progress Bar -->
+        <div class="bg-blue-800 h-2 w-full">
+            <div id="progress-bar" class="bg-yellow-400 h-2 transition-all duration-500" style="width: 0%;"></div>
+        </div>
+        <div class="max-w-4xl mx-auto px-4 py-1 flex justify-between text-xs text-blue-100">
+            <span id="progress-text">Progress Pembelajaran: 0%</span>
+            <span id="step-indicator">Identitas</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-container" class="flex-grow overflow-y-auto p-4 md:p-6 no-print hide-scrollbar">
+        <div class="max-w-3xl mx-auto">
+
+            <!-- Toast Notification Container -->
+            <div id="toast-container" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2"></div>
+
+            <!-- SECTION 0: Identitas & Orientasi (5 Menit) -->
+            <section id="sec-0" class="step-section bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Orientasi (5 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Selamat Datang di LKPD Digital</h2>
+                    <p class="text-gray-600">Bab 3: Teknologi Informasi dan Komunikasi - Integrasi Aplikasi Perkantoran</p>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+                    <h3 class="font-bold mb-2">🎯 Tujuan Pembelajaran:</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Memahami fungsi Copy, Paste, Cut, dan Integrasi Konten.</li>
+                        <li>Menerapkan fitur Object Linking and Embedding (OLE).</li>
+                        <li>Menggunakan Mail Merge untuk dokumen massal.</li>
+                        <li>Memanfaatkan fitur pembuat video di aplikasi presentasi.</li>
+                    </ul>
+                    <p class="mt-3 font-semibold">⏳ Estimasi Waktu: 90 Menit</p>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg border-b pb-2">Lengkapi Identitas</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="id-name" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                            <input type="text" id="id-class" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: X-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. Absen</label>
+                            <input type="number" id="id-absen" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: 12">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end">
+                    <button onclick="nextStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Mulai Eksplorasi ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 1: Eksplorasi Materi (10 Menit) -->
+            <section id="sec-1" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Eksplorasi (10 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Ringkasan Materi & Pemantik</h2>
+                </div>
+
+                <div class="prose max-w-none text-sm text-gray-700 space-y-4">
+                    <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h3 class="font-bold text-lg mb-2 text-black">1. Integrasi Perintah Dasar</h3>
+                        <p><strong>Copy</strong> (menyalin tanpa menghapus sumber), <strong>Cut</strong> (memotong/memindahkan sumber), dan <strong>Paste</strong> (menempelkan isi clipboard). Clipboard adalah memori penyimpanan sementara.</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
+                        <h3 class="font-bold text-lg mb-2 text-black">2. OLE (Object Linking and Embedding)</h3>
+                        <p>Teknologi yang memungkinkan dokumen terdiri dari banyak objek terhubung antaraplikasi (misal: Grafik Excel di Word). Jika disisipkan sebagai <strong>Link</strong>, perubahan pada sumber akan otomatis mengubah objek tujuan.</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-purple-500">
+                        <h3 class="font-bold text-lg mb-2 text-black">3. Mail Merge (Surat Massal)</h3>
+                        <p>Fitur menggabungkan <em>Main Document</em> (Template/Dokumen Utama) dengan <em>Data Source</em> (Sumber Data, misal dari Excel). Digunakan untuk membuat dokumen dengan personalisasi masif secara cepat, efisien, dan akurat.</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-yellow-500">
+                        <h3 class="font-bold text-lg mb-2 text-black">4. Fitur Video di PowerPoint</h3>
+                        <p>Presentasi yang memuat teks, gambar, transisi, animasi, dan narasi dapat diekspor menjadi Video (MP4) agar bisa disebarluaskan dengan mudah tanpa audiens harus hadir secara langsung.</p>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <h4 class="font-bold text-orange-800 mb-2">🤔 Pertanyaan Pemantik (Pikirkan sejenak):</h4>
+                        <ul class="list-disc pl-5 text-orange-900 space-y-1">
+                            <li>Mengapa kita butuh OLE jika kita bisa sekadar Copy-Paste biasa?</li>
+                            <li>Apa yang terjadi jika data sumber Mail Merge kita hapus secara tidak sengaja?</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(0)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="nextStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Lanjut Aktivitas 1 ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 2: Aktivitas 1 - Pemahaman Konsep (15 Menit) -->
+            <section id="sec-2" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Aktivitas 1 (15 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Pemahaman Konsep (Pilihan Ganda)</h2>
+                    <p class="text-gray-600 text-sm">Pilih satu jawaban yang paling tepat berdasarkan materi yang telah dibaca.</p>
+                </div>
+
+                <div class="space-y-6" id="quiz-container">
+                    <!-- Q1 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-3">1. Apa perbedaan utama perintah Copy dan Cut?</p>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q1" value="A" class="mt-1"> A. Copy menyalin ke clipboard, Cut menghapus permanen tanpa menyalin.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q1" value="B" class="mt-1"> B. Copy mempertahankan data asli, Cut memindahkan data (menghapus dari asal).
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q1" value="C" class="mt-1"> C. Copy digunakan antar aplikasi, Cut hanya dalam satu aplikasi.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-3">2. Jika Anda menempelkan grafik Excel ke Word menggunakan paste Link (OLE), apa yang terjadi jika data di Excel diubah?</p>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q2" value="A" class="mt-1"> A. Grafik di Word tetap seperti awal (tidak berubah).
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q2" value="B" class="mt-1"> B. Grafik di Word berubah menjadi teks.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q2" value="C" class="mt-1"> C. Grafik di Word akan otomatis diperbarui mengikuti Excel.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-3">3. Dalam fitur Mail Merge, tempat di mana data siswa (seperti nama dan alamat) disimpan sebelum digabungkan disebut...</p>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q3" value="A" class="mt-1"> A. Main Document
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q3" value="B" class="mt-1"> B. Data Source
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q3" value="C" class="mt-1"> C. Result Document
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-3">4. Mengapa Mail Merge lebih disarankan daripada mengetik manual untuk 100 surat undangan?</p>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q4" value="A" class="mt-1"> A. Karena Mail Merge mengubah dokumen menjadi PDF otomatis.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q4" value="B" class="mt-1"> B. Lebih hemat waktu, rapi, dan menekan risiko kesalahan pengetikan data.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q4" value="C" class="mt-1"> C. Mail Merge membuat desain surat menjadi lebih interaktif.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-3">5. Apa langkah penting sebelum mengekspor presentasi PowerPoint menjadi Video agar informatif?</p>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q5" value="A" class="mt-1"> A. Menghapus semua animasi agar video tidak terlalu besar.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q5" value="B" class="mt-1"> B. Menambahkan narasi suara, animasi, dan mengatur transisi slide.
+                            </label>
+                            <label class="flex items-start gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                                <input type="radio" name="q5" value="C" class="mt-1"> C. Menyisipkan Mail Merge ke dalam setiap slide.
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(1)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="validateAct1AndNext()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Lanjut Aktivitas 2 ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Aktivitas 2 - Analisis Kasus (15 Menit) -->
+            <section id="sec-3" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Aktivitas 2 (15 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Analisis Kasus</h2>
+                    <p class="text-gray-600 text-sm">Baca studi kasus berikut dan berikan solusi berdasarkan materi.</p>
+                </div>
+
+                <div class="bg-indigo-50 p-5 rounded-lg border border-indigo-100 mb-6 text-sm text-indigo-900">
+                    <h3 class="font-bold mb-2">📝 Studi Kasus:</h3>
+                    <p class="mb-2">Kania adalah sekretaris OSIS. Ia ditugaskan membuat <strong>50 surat undangan rapat</strong> untuk ketua kelas yang berbeda-beda. Di dalam surat tersebut, ia juga harus menyertakan <strong>sebuah grafik anggaran kegiatan</strong> bulanan yang datanya ada di Microsoft Excel.</p>
+                    <p>Masalahnya, data anggaran di Excel masih sering berubah-ubah karena bendahara masih merevisi pengeluaran. Kania harus menyelesaikan tugas ini dalam waktu 1 jam.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block font-semibold mb-2">Berdasarkan kasus di atas, fitur apa saja yang paling tepat digunakan Kania untuk surat undangan dan grafik anggarannya? Jelaskan langkah logis yang harus ia lakukan!</label>
+                        <p class="text-xs text-gray-500 mb-2">⚠️ Jawab dengan kalimatmu sendiri. Fitur Paste (Ctrl+V) diblokir.</p>
+                        <textarea id="act2-q1" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-indigo-500 focus:border-indigo-500 anti-paste" rows="5" placeholder="Tuliskan analisismu di sini... (Minimal 100 karakter)" oninput="updateCharCount('act2-q1', 'count-act2', 100)"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="warn-act2" class="text-red-500 hidden">Jawaban masih terlalu singkat.</span>
+                            <span id="count-act2" class="text-gray-500 ml-auto">0 / 100 karakter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(2)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="validateTextareaAndNext('act2-q1', 100, 4)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Lanjut Aktivitas 3 ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Aktivitas 3 - Berpikir & Menjelaskan (15 Menit) -->
+            <section id="sec-4" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Aktivitas 3 (15 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Berpikir & Menjelaskan</h2>
+                    <p class="text-gray-600 text-sm">Gunakan bahasamu sendiri untuk menjelaskan konsep berikut. Fitur copy-paste dimatikan untuk memastikan pemikiran asli.</p>
+                </div>
+
+                <div class="space-y-8">
+                    <!-- Q1 -->
+                    <div>
+                        <label class="block font-semibold mb-2">1. Jelaskan dengan bahasamu sendiri, apa kerugiannya jika kita <u>tidak</u> menggunakan fitur Mail Merge saat harus mengirim surat peringatan ke 200 siswa yang sering terlambat?</label>
+                        <textarea id="act3-q1" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-blue-500 focus:border-blue-500 anti-paste" rows="4" placeholder="Jelaskan dampak/kerugiannya..." oninput="updateCharCount('act3-q1', 'count-act3-1', 75)"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="warn-act3-1" class="text-red-500 hidden">Jawaban masih terlalu singkat.</span>
+                            <span id="count-act3-1" class="text-gray-500 ml-auto">0 / 75 karakter</span>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div>
+                        <label class="block font-semibold mb-2">2. Sebuah kelompok membuat presentasi proyek menggunakan PowerPoint. Namun, setengah anggota kelas sedang studi lapangan dan tidak bisa hadir. Bagaimana mereka bisa memanfaatkan fitur "Export to Video" agar presentasi tetap informatif layaknya presentasi langsung? Apa yang harus ditambahkan sebelum diekspor?</label>
+                        <textarea id="act3-q2" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-blue-500 focus:border-blue-500 anti-paste" rows="4" placeholder="Berikan pendapatmu..." oninput="updateCharCount('act3-q2', 'count-act3-2', 75)"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="warn-act3-2" class="text-red-500 hidden">Jawaban masih terlalu singkat.</span>
+                            <span id="count-act3-2" class="text-gray-500 ml-auto">0 / 75 karakter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(3)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="validateAct3AndNext()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Lanjut Mind Mapping ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 5: Aktivitas 4 - Mind Mapping (25 Menit) -->
+            <section id="sec-5" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Aktivitas 4 (25 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Produk: Mind Mapping</h2>
+                    <p class="text-gray-600 text-sm">Buatlah mind mapping materi di kertas atau aplikasi lain, lalu unggah hasilnya.</p>
+                </div>
+
+                <div class="bg-yellow-50 p-4 border border-yellow-200 rounded-lg mb-6 text-sm">
+                    <h3 class="font-bold text-yellow-800">📌 Instruksi Pembuatan:</h3>
+                    <p class="text-yellow-900 mt-1">Buatlah mind mapping mengenai <strong>Integrasi Konten Aplikasi Perkantoran</strong>. Masukkan konsep utama (Copy/Paste, OLE, Mail Merge, Video Presentasi), konsep pendukung, hubungan antar konsep, dan contohnya. Desain sekreatif mungkin!</p>
+                </div>
+
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 hover:bg-gray-100 transition relative" id="upload-container">
+                    <input type="file" id="file-upload" accept=".jpg,.jpeg,.png,.pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileUpload(event)">
+                    <div id="upload-prompt">
+                        <div class="text-4xl mb-3">📤</div>
+                        <h4 class="font-semibold text-gray-700 text-lg">Upload Mind Mapping</h4>
+                        <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, atau PDF (Max 5MB)</p>
+                        <p class="text-xs text-gray-500">Klik atau Drag & Drop file di sini</p>
+                    </div>
+
+                    <!-- File Preview Area (Hidden by default) -->
+                    <div id="file-preview" class="hidden text-left">
+                        <div class="flex items-center justify-between bg-white p-3 rounded border shadow-sm mb-4">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div class="text-2xl" id="file-icon">📄</div>
+                                <div class="truncate">
+                                    <p class="font-semibold text-sm truncate" id="file-name">filename.jpg</p>
+                                    <p class="text-xs text-gray-500" id="file-size">1.2 MB</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">✓ Berhasil</span>
+                            </div>
+                        </div>
+                        <!-- Image Preview -->
+                        <div id="img-preview-container" class="hidden justify-center mb-4 bg-gray-200 rounded p-2">
+                            <img id="img-preview" src="" alt="Preview" class="max-h-64 object-contain">
+                        </div>
+                        <div class="flex justify-center z-10 relative">
+                            <button onclick="document.getElementById('file-upload').click()" class="text-sm bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded font-medium transition shadow-sm z-20 mr-2">Ganti File</button>
+                            <button onclick="removeFile()" class="text-sm bg-red-100 text-red-600 hover:bg-red-200 px-4 py-2 rounded font-medium transition shadow-sm z-20">Hapus File</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(4)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="validateMindMapAndNext()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Lanjut Refleksi ➔</button>
+                </div>
+            </section>
+
+            <!-- SECTION 6: Refleksi (5 Menit) -->
+            <section id="sec-6" class="step-section hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="mb-6 border-b pb-4">
+                    <span class="text-xs font-bold tracking-wider text-blue-600 uppercase">Refleksi (5 Menit)</span>
+                    <h2 class="text-2xl font-bold mt-1 mb-2">Refleksi Pembelajaran</h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block font-semibold mb-2">1. Apa konsep paling penting yang kamu dapatkan hari ini?</label>
+                        <textarea id="ref-q1" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-green-500 focus:border-green-500 anti-paste" rows="3" placeholder="Tuliskan jawabanmu..." oninput="updateCharCount('ref-q1', 'count-ref-1', 30)"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="warn-ref-1" class="text-red-500 hidden">Jawaban masih terlalu singkat.</span>
+                            <span id="count-ref-1" class="text-gray-500 ml-auto">0 / 30 karakter</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-2">2. Bagaimana materi integrasi aplikasi ini dapat membantu mempermudah tugas-tugas sekolahmu ke depannya?</label>
+                        <textarea id="ref-q2" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-green-500 focus:border-green-500 anti-paste" rows="3" placeholder="Tuliskan jawabanmu..." oninput="updateCharCount('ref-q2', 'count-ref-2', 30)"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="warn-ref-2" class="text-red-500 hidden">Jawaban masih terlalu singkat.</span>
+                            <span id="count-ref-2" class="text-gray-500 ml-auto">0 / 30 karakter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep(5)" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4">⬅ Kembali</button>
+                    <button onclick="finishLKPD()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md">Selesaikan LKPD ✔</button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- SECTION 7: Hasil Akhir (Printable) -->
+    <section id="print-section" class="hidden bg-white min-h-screen">
+        <div class="max-w-4xl mx-auto p-8 relative">
+            <!-- Action Buttons (No Print) -->
+            <div class="no-print absolute top-8 right-8 flex gap-3">
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow font-bold flex items-center gap-2">
+                    🖨️ Cetak Lembar Hasil
+                </button>
+            </div>
+
+            <div class="text-center border-b-2 border-black pb-4 mb-6">
+                <h1 class="text-2xl font-bold uppercase">Hasil Aktivitas Pembelajaran</h1>
+                <h2 class="text-xl">Integrasi Aplikasi Perkantoran</h2>
+            </div>
+
+            <!-- Identitas -->
+            <div class="mb-6 grid grid-cols-2 gap-4 text-sm print-card">
+                <div>
+                    <p><strong>Nama Lengkap:</strong> <span id="res-name">-</span></p>
+                    <p><strong>Kelas:</strong> <span id="res-class">-</span></p>
+                    <p><strong>No. Absen:</strong> <span id="res-absen">-</span></p>
+                </div>
+                <div>
+                    <p><strong>Mata Pelajaran:</strong> Informatika</p>
+                    <p><strong>Tanggal Pengerjaan:</strong> <span id="res-date">-</span></p>
+                    <p><strong>Durasi:</strong> <span id="res-duration">-</span></p>
+                </div>
+            </div>
+
+            <!-- Objective Score & Act 1 Details -->
+            <div class="mb-6 print-card bg-gray-50">
+                <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg">Aktivitas 1: Pemahaman Konsep</h3>
+                        <p class="text-sm text-gray-600">Pilihan Ganda: Benar <span id="res-benar">0</span> dari 5</p>
+                    </div>
+                    <div class="text-4xl font-bold text-blue-600" id="res-score">
+                        0/100
+                    </div>
+                </div>
+                <!-- Tempat rincian soal Pilihan Ganda -->
+                <div id="res-act1-details" class="space-y-3 text-sm">
+                    <!-- Javascript akan mengisi rincian di sini -->
+                </div>
+            </div>
+
+            <!-- Subjective Answers -->
+            <div class="mb-6 space-y-6">
+                <div class="print-card">
+                    <h3 class="font-bold text-lg border-b pb-2 mb-3 bg-gray-100 p-2">Aktivitas 2: Analisis Kasus</h3>
+                    <div class="text-sm">
+                        <p class="font-semibold mb-1">Solusi Kasus Mail Merge & Grafik:</p>
+                        <p class="text-gray-800 whitespace-pre-wrap italic p-3 bg-gray-50 rounded" id="res-act2">-</p>
+                        <p class="text-xs text-right mt-1 text-gray-500 font-bold">* Dinilai Guru</p>
+                    </div>
+                </div>
+
+                <div class="print-card">
+                    <h3 class="font-bold text-lg border-b pb-2 mb-3 bg-gray-100 p-2">Aktivitas 3: Berpikir & Menjelaskan</h3>
+                    <div class="text-sm space-y-4">
+                        <div>
+                            <p class="font-semibold mb-1">1. Dampak Tidak Menggunakan Mail Merge:</p>
+                            <p class="text-gray-800 whitespace-pre-wrap italic p-3 bg-gray-50 rounded" id="res-act3-1">-</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold mb-1">2. Pemanfaatan Export to Video Presentasi:</p>
+                            <p class="text-gray-800 whitespace-pre-wrap italic p-3 bg-gray-50 rounded" id="res-act3-2">-</p>
+                        </div>
+                        <p class="text-xs text-right text-gray-500 font-bold">* Dinilai Guru</p>
+                    </div>
+                </div>
+
+                <div class="print-card">
+                    <h3 class="font-bold text-lg border-b pb-2 mb-3 bg-gray-100 p-2">Aktivitas 4: Mind Mapping</h3>
+                    <div class="text-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between w-full">
+                            <div>
+                                <p class="font-semibold mb-1">Status Pengumpulan:</p>
+                                <p class="text-green-600 font-bold" id="res-mm-status">✓ Belum Diunggah</p>
+                                <div id="res-mm-fileinfo" class="text-gray-600 text-xs mt-1"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 font-bold">* Dinilai Guru</p>
+                        </div>
+                        
+                        <!-- Wadah pratinjau gambar saat dicetak -->
+                        <div id="res-mm-preview-container" class="hidden mt-4 pt-4 border-t border-gray-200">
+                            <p class="font-semibold mb-2 text-center text-gray-700">Lampiran Gambar Mind Mapping:</p>
+                            <div class="flex justify-center bg-gray-50 p-2 border rounded">
+                                <img id="res-mm-preview" src="" alt="Mind Map" class="max-w-full max-h-[600px] object-contain">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="print-card">
+                    <h3 class="font-bold text-lg border-b pb-2 mb-3 bg-gray-100 p-2">Refleksi Pembelajaran</h3>
+                    <div class="text-sm space-y-4">
+                        <div>
+                            <p class="font-semibold mb-1">Konsep Terpenting:</p>
+                            <p class="text-gray-800 whitespace-pre-wrap italic p-3 bg-gray-50 rounded" id="res-ref-1">-</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold mb-1">Penerapan ke Depan:</p>
+                            <p class="text-gray-800 whitespace-pre-wrap italic p-3 bg-gray-50 rounded" id="res-ref-2">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Area -->
+            <div class="mt-12 flex justify-between px-10 print-only">
+                <div class="text-center">
+                    <p class="mb-16">Mengetahui,<br>Orang Tua/Wali</p>
+                    <p class="border-t border-black w-48 mx-auto">( ........................................ )</p>
+                </div>
+                <div class="text-center">
+                    <p class="mb-16">Diperiksa Oleh,<br>Guru Mata Pelajaran</p>
+                    <p class="border-t border-black w-48 mx-auto">( ........................................ )</p>
+                    <p class="text-sm mt-1">Tanggal: ......................</p>
+                </div>
+            </div>
+            
+            <div class="no-print mt-10 text-center">
+                 <button onclick="confirmReset()" class="text-sm text-red-600 underline">Reset Aktivitas (Kembali ke awal)</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /* --- STATE MANAGEMENT --- */
+        const STORAGE_KEY = 'lkpd_infor_bab3_state';
+        let state = {
+            step: 0,
+            startTime: null,
+            endTime: null,
+            identity: { name: '', class: '', absen: '' },
+            act1: { q1: '', q2: '', q3: '', q4: '', q5: '' },
+            act2: { q1: '' },
+            act3: { q1: '', q2: '' },
+            mindmap: { name: '', size: '', uploaded: false, dataUrl: null }, // Store limited metadata
+            reflection: { q1: '', q2: '' }
+        };
+
+        const KEY_ANSWERS = { q1: 'B', q2: 'C', q3: 'B', q4: 'B', q5: 'B' };
+        const STEPS_INFO = ['Identitas', 'Eksplorasi', 'Aktivitas 1', 'Aktivitas 2', 'Aktivitas 3', 'Mind Mapping', 'Refleksi', 'Hasil'];
+
+        /* --- INITIALIZATION --- */
+        window.onload = () => {
+            loadState();
+            setupAntiPaste();
+            renderStep(state.step);
+            populateFields();
+        };
+
+        function saveState() {
+            try {
+                // Don't save large data URLs to localstorage to avoid quota exceeded
+                let stateToSave = JSON.parse(JSON.stringify(state));
+                stateToSave.mindmap.dataUrl = null; 
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+            } catch(e) {
+                console.warn("Could not save to LocalStorage", e);
+            }
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    // Merge saved state to ensure structure
+                    state = { ...state, ...parsed };
+                    
+                    // Recover uploaded UI state visually if file was uploaded previously
+                    if(state.mindmap.uploaded) {
+                        showUploadPreview(state.mindmap.name, state.mindmap.size, null);
+                    }
+                } catch(e) {
+                    console.error("State parse error", e);
+                }
+            }
+            if(state.startTime === null && state.step > 0) {
+                 state.startTime = new Date().getTime();
+            }
+        }
+
+        function confirmReset() {
+            // Replaces native confirm() with custom modal
+            if(window.confirm("Apakah kamu yakin ingin menghapus seluruh jawaban dan memulai dari awal? Data tidak bisa dikembalikan.")) {
+                localStorage.removeItem(STORAGE_KEY);
+                window.location.reload();
+            }
+        }
+
+        /* --- NAVIGATION & VALIDATION --- */
+        function renderStep(stepIndex) {
+            // Hide all
+            document.querySelectorAll('.step-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('print-section').classList.add('hidden');
+            
+            // Unhide target if valid
+            if (stepIndex >= 0 && stepIndex < 7) {
+                document.getElementById(`sec-${stepIndex}`).classList.remove('hidden');
+                document.getElementById('app-container').scrollTo(0,0);
+            } else if (stepIndex === 7) {
+                document.getElementById('app-container').classList.add('hidden');
+                document.getElementById('print-section').classList.remove('hidden');
+                generateResultPage();
+            }
+
+            // Update Progress
+            const progress = Math.round((stepIndex / 7) * 100);
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `Progress Pembelajaran: ${progress}%`;
+            document.getElementById('step-indicator').innerText = STEPS_INFO[stepIndex] || '';
+            state.step = stepIndex;
+            saveState();
+        }
+
+        function nextStep(target) {
+            // Validations before moving next
+            if (target === 1) {
+                const n = document.getElementById('id-name').value.trim();
+                const c = document.getElementById('id-class').value.trim();
+                const a = document.getElementById('id-absen').value.trim();
+                
+                if(!n || !c || !a) {
+                    showToast("⚠️ Harap lengkapi Identitas (Nama, Kelas, No. Absen) sebelum lanjut.");
+                    return;
+                }
+                state.identity = { name: n, class: c, absen: a };
+                if(!state.startTime) state.startTime = new Date().getTime();
+                saveState();
+            }
+            renderStep(target);
+        }
+
+        function prevStep(target) {
+            renderStep(target);
+        }
+
+        function validateAct1AndNext() {
+            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
+            const q3 = document.querySelector('input[name="q3"]:checked')?.value;
+            const q4 = document.querySelector('input[name="q4"]:checked')?.value;
+            const q5 = document.querySelector('input[name="q5"]:checked')?.value;
+
+            if(!q1 || !q2 || !q3 || !q4 || !q5) {
+                showToast("⚠️ Harap jawab semua pertanyaan pilihan ganda.");
+                return;
+            }
+            state.act1 = { q1, q2, q3, q4, q5 };
+            saveState();
+            nextStep(3);
+        }
+
+        function validateTextareaAndNext(id, minLength, nextIndex) {
+            const val = document.getElementById(id).value.trim();
+            if (val.length < minLength) {
+                showToast(`⚠️ Jawaban masih terlalu singkat (minimal ${minLength} karakter).`);
+                document.getElementById(id).focus();
+                return;
+            }
+            if(id === 'act2-q1') state.act2.q1 = val;
+            saveState();
+            nextStep(nextIndex);
+        }
+
+        function validateAct3AndNext() {
+            const val1 = document.getElementById('act3-q1').value.trim();
+            const val2 = document.getElementById('act3-q2').value.trim();
+            if (val1.length < 75 || val2.length < 75) {
+                showToast(`⚠️ Pastikan kedua jawaban sudah diisi dengan lengkap (min 75 karakter).`);
+                return;
+            }
+            state.act3 = { q1: val1, q2: val2 };
+            saveState();
+            nextStep(5);
+        }
+
+        function validateMindMapAndNext() {
+            if(!state.mindmap.uploaded) {
+                showToast("⚠️ Silakan upload file Mind Mapping terlebih dahulu.");
+                return;
+            }
+            nextStep(6);
+        }
+
+        function finishLKPD() {
+            const val1 = document.getElementById('ref-q1').value.trim();
+            const val2 = document.getElementById('ref-q2').value.trim();
+            if (val1.length < 30 || val2.length < 30) {
+                showToast(`⚠️ Harap isi bagian refleksi dengan lengkap.`);
+                return;
+            }
+            state.reflection = { q1: val1, q2: val2 };
+            state.endTime = new Date().getTime();
+            saveState();
+            
+            showToast("🎉 Selamat! LKPD berhasil diselesaikan.");
+            setTimeout(() => renderStep(7), 1500);
+        }
+
+        function populateFields() {
+            // Identity
+            if(state.identity.name) document.getElementById('id-name').value = state.identity.name;
+            if(state.identity.class) document.getElementById('id-class').value = state.identity.class;
+            if(state.identity.absen) document.getElementById('id-absen').value = state.identity.absen;
+
+            // Act 1
+            Object.keys(state.act1).forEach(k => {
+                if(state.act1[k]) {
+                    const el = document.querySelector(`input[name="${k}"][value="${state.act1[k]}"]`);
+                    if(el) el.checked = true;
+                }
+            });
+
+            // Textareas
+            if(state.act2.q1) {
+                const el = document.getElementById('act2-q1');
+                el.value = state.act2.q1;
+                updateCharCount('act2-q1', 'count-act2', 100);
+            }
+            if(state.act3.q1) {
+                 document.getElementById('act3-q1').value = state.act3.q1;
+                 updateCharCount('act3-q1', 'count-act3-1', 75);
+            }
+            if(state.act3.q2) {
+                 document.getElementById('act3-q2').value = state.act3.q2;
+                 updateCharCount('act3-q2', 'count-act3-2', 75);
+            }
+            if(state.reflection.q1) {
+                 document.getElementById('ref-q1').value = state.reflection.q1;
+                 updateCharCount('ref-q1', 'count-ref-1', 30);
+            }
+            if(state.reflection.q2) {
+                 document.getElementById('ref-q2').value = state.reflection.q2;
+                 updateCharCount('ref-q2', 'count-ref-2', 30);
+            }
+        }
+
+        /* --- UI HELPERS --- */
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm font-medium toast-enter';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.style.opacity = 0;
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function updateCharCount(inputId, countId, minLength) {
+            const el = document.getElementById(inputId);
+            const counter = document.getElementById(countId);
+            const warnId = inputId.replace('act', 'warn-act').replace('ref', 'warn-ref'); // simple mapping
+            const warn = document.getElementById(warnId);
+            
+            const len = el.value.length;
+            counter.innerText = `${len} / ${minLength} karakter min`;
+            
+            if (len > 0 && len < minLength) {
+                counter.classList.add('text-red-500');
+                if(warn) warn.classList.remove('hidden');
+            } else {
+                counter.classList.remove('text-red-500');
+                if(warn) warn.classList.add('hidden');
+            }
+        }
+
+        /* --- ANTI-PASTE LOGIC --- */
+        function setupAntiPaste() {
+            const textareas = document.querySelectorAll('.anti-paste');
+            textareas.forEach(el => {
+                // Block paste event completely
+                el.addEventListener('paste', e => {
+                    e.preventDefault();
+                    showToast("⚠️ Jawaban harus ditulis sendiri. Fitur paste tidak tersedia pada kolom ini.");
+                });
+                // Block drop event
+                el.addEventListener('drop', e => {
+                    e.preventDefault();
+                    showToast("⚠️ Drag & Drop teks dilarang di kolom ini.");
+                });
+                // Block context menu (Right click) entirely for these fields
+                el.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    showToast("⚠️ Menu klik kanan dinonaktifkan di kolom ini.");
+                });
+                // Catch Ctrl+V/Cmd+V just in case browser bypassed paste event
+                el.addEventListener('keydown', e => {
+                    if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+                        e.preventDefault();
+                        showToast("⚠️ Shortcut Paste (Ctrl+V) dinonaktifkan.");
+                    }
+                });
+            });
+        }
+
+        /* --- UPLOAD LOGIC --- */
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            // Validate size (5MB = 5 * 1024 * 1024)
+            if(file.size > 5242880) {
+                showToast("⚠️ Ukuran file terlalu besar. Maksimal 5MB.");
+                return;
+            }
+
+            const isImage = file.type.startsWith('image/');
+            const isPDF = file.type === 'application/pdf';
+
+            if(!isImage && !isPDF) {
+                showToast("⚠️ Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
+                return;
+            }
+
+            // Update State
+            state.mindmap = {
+                name: file.name,
+                size: formatBytes(file.size),
+                type: file.type,
+                uploaded: true,
+                dataUrl: null
+            };
+
+            // Setup Preview
+            if(isImage) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    state.mindmap.dataUrl = evt.target.result; // temp hold for preview
+                    showUploadPreview(file.name, formatBytes(file.size), evt.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                showUploadPreview(file.name, formatBytes(file.size), null);
+            }
+            
+            saveState();
+            showToast("✓ Mind mapping berhasil ditambahkan.");
+        }
+
+        function showUploadPreview(name, size, dataUrl) {
+            document.getElementById('upload-prompt').classList.add('hidden');
+            document.getElementById('file-preview').classList.remove('hidden');
+            
+            document.getElementById('file-name').innerText = name;
+            document.getElementById('file-size').innerText = size;
+            
+            const isPdf = name.toLowerCase().endsWith('.pdf');
+            document.getElementById('file-icon').innerText = isPdf ? '📑' : '🖼️';
+
+            const imgContainer = document.getElementById('img-preview-container');
+            const imgEl = document.getElementById('img-preview');
+            
+            if(dataUrl) {
+                imgEl.src = dataUrl;
+                imgContainer.classList.remove('hidden');
+                imgContainer.classList.add('flex');
+            } else {
+                imgContainer.classList.add('hidden');
+                imgContainer.classList.remove('flex');
+            }
+        }
+
+        function removeFile() {
+            document.getElementById('file-upload').value = "";
+            state.mindmap = { name: '', size: '', uploaded: false, dataUrl: null };
+            document.getElementById('file-preview').classList.add('hidden');
+            document.getElementById('upload-prompt').classList.remove('hidden');
+            saveState();
+        }
+
+        /* --- FINAL RESULT & PRINT GENERATION --- */
+        function generateResultPage() {
+            // Identity
+            document.getElementById('res-name').innerText = state.identity.name || 'NN';
+            document.getElementById('res-class').innerText = state.identity.class || '-';
+            document.getElementById('res-absen').innerText = state.identity.absen || '-';
+            
+            // Date
+            const d = new Date();
+            document.getElementById('res-date').innerText = d.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Duration
+            if(state.startTime && state.endTime) {
+                const diffMs = state.endTime - state.startTime;
+                const diffMins = Math.round(diffMs / 60000);
+                document.getElementById('res-duration').innerText = `${diffMins} Menit`;
+            } else {
+                document.getElementById('res-duration').innerText = '-';
+            }
+
+            // Score Objective Calculation
+            let correct = 0;
+            if(state.act1.q1 === KEY_ANSWERS.q1) correct++;
+            if(state.act1.q2 === KEY_ANSWERS.q2) correct++;
+            if(state.act1.q3 === KEY_ANSWERS.q3) correct++;
+            if(state.act1.q4 === KEY_ANSWERS.q4) correct++;
+            if(state.act1.q5 === KEY_ANSWERS.q5) correct++;
+            
+            document.getElementById('res-benar').innerText = correct;
+            document.getElementById('res-score').innerText = (correct * 20) + "/100";
+
+            // Extract and Inject Detailed Answers for Act 1 Dynamically
+            const quizContainers = document.querySelectorAll('#quiz-container > div');
+            let act1DetailsHtml = '';
+
+            quizContainers.forEach((qDiv, index) => {
+                const qNum = index + 1;
+                const qKey = `q${qNum}`;
+                const questionText = qDiv.querySelector('p.font-semibold').innerText;
+                const userAns = state.act1[qKey];
+                const correctAns = KEY_ANSWERS[qKey];
+                const isCorrect = userAns === correctAns;
+                
+                let userAnsText = 'Tidak dijawab';
+                let correctAnsText = '';
+                
+                // Extract answers text from the DOM to keep it synced
+                const labels = qDiv.querySelectorAll('label');
+                labels.forEach(label => {
+                    const input = label.querySelector('input');
+                    if(input) {
+                        const val = input.value;
+                        const text = label.textContent.trim();
+                        if (val === userAns) userAnsText = text;
+                        if (val === correctAns) correctAnsText = text;
+                    }
+                });
+
+                const statusMark = isCorrect 
+                    ? '<span class="text-green-600 font-bold ml-2">✓ Benar</span>' 
+                    : '<span class="text-red-600 font-bold ml-2">✗ Salah</span>';
+
+                act1DetailsHtml += `
+                    <div class="bg-white p-3 rounded border ${isCorrect ? 'border-gray-200' : 'border-red-200'}" style="page-break-inside: avoid;">
+                        <p class="font-semibold mb-2 text-gray-800">${questionText}</p>
+                        <div class="ml-2 pl-3 border-l-2 ${isCorrect ? 'border-green-400' : 'border-red-400'}">
+                            <p class="text-gray-700"><strong>Jawabanmu:</strong> ${userAnsText} ${userAns ? statusMark : ''}</p>
+                            ${!isCorrect ? `<p class="text-gray-600 mt-1 text-xs"><strong>Kunci Jawaban:</strong> ${correctAnsText}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('res-act1-details').innerHTML = act1DetailsHtml;
+
+            // Subjective
+            document.getElementById('res-act2').innerText = state.act2.q1 || '-';
+            document.getElementById('res-act3-1').innerText = state.act3.q1 || '-';
+            document.getElementById('res-act3-2').innerText = state.act3.q2 || '-';
+            
+            document.getElementById('res-ref-1').innerText = state.reflection.q1 || '-';
+            document.getElementById('res-ref-2').innerText = state.reflection.q2 || '-';
+
+            // Mind Map Status
+            const mmStatus = document.getElementById('res-mm-status');
+            const mmInfo = document.getElementById('res-mm-fileinfo');
+            const mmPreviewContainer = document.getElementById('res-mm-preview-container');
+            const mmPreviewImg = document.getElementById('res-mm-preview');
+            
+            if(state.mindmap.uploaded) {
+                mmStatus.innerText = "✓ Diunggah";
+                mmStatus.className = "text-green-600 font-bold";
+                // Identitas File Request L
+                mmInfo.innerHTML = `Identitas File:<br>Nama: ${state.identity.name}<br>Kelas: ${state.identity.class}<br>No. Absen: ${state.identity.absen}<br>Nama File: ${state.mindmap.name} (${state.mindmap.size})`;
+                
+                // Cek apakah file dataUrl masih ada di memori saat ini
+                if (state.mindmap.dataUrl) {
+                    mmPreviewImg.src = state.mindmap.dataUrl;
+                    mmPreviewContainer.classList.remove('hidden');
+                } else {
+                    mmPreviewImg.src = "";
+                    mmPreviewContainer.classList.add('hidden');
+                    
+                    // Beri tahu murid jika gambar tidak bisa diprint karena halaman dimuat ulang
+                    if (state.mindmap.name.match(/\.(jpg|jpeg|png)$/i)) {
+                        mmInfo.innerHTML += "<br><span class='text-orange-600 text-[10px]'>* Catatan: Anda merefresh halaman. Unggah ulang gambar jika ingin mencetak beserta gambarnya.</span>";
+                    }
+                }
+            } else {
+                mmStatus.innerText = "✗ Belum Diunggah";
+                mmStatus.className = "text-red-600 font-bold";
+                mmInfo.innerHTML = "";
+                mmPreviewImg.src = "";
+                mmPreviewContainer.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
